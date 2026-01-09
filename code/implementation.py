@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, Iterator, List, Tuple, Union
+from typing import Any, Callable, Dict, Iterator, List, Tuple, Union, Optional
 
 from dataset import DataSetInterface, DataSetItem
 
@@ -10,8 +10,10 @@ class DataSet(DataSetInterface):
     Implementation of DataSetInterface.
     Stores DataSetItem objects, indexed by unique item.name.
     """
+    def __init__(self, items: Optional[Union[List[DataSetItem], Tuple[DataSetItem, ...]]] = None):
+        if items is None:
+            items = []
 
-    def __init__(self, items: Union[List[DataSetItem], Tuple[DataSetItem, ...]] = []):
         super().__init__(items)
         self._items: Dict[str, DataSetItem] = {}
         self._insert_order: List[str] = []
@@ -65,12 +67,11 @@ class DataSet(DataSetInterface):
         return self._items[name]
 
     def __and__(self, dataset: DataSetInterface) -> DataSetInterface:
-        # Intersection: names are the key; take items from self
+        # Intersection: names are the key; preserve insertion order of self
         result = DataSet()
-        # keep default iteration settings from DataSetInterface; tests set them later anyway
-        for name, item in self._items.items():
+        for name in self._insert_order:
             if name in dataset:
-                result += item
+                result += self._items[name]
         return result
 
     def __or__(self, dataset: DataSetInterface) -> DataSetInterface:
@@ -83,7 +84,6 @@ class DataSet(DataSetInterface):
 
         # then add items from dataset (overwrite by name)
         for item in dataset:
-            # item is a DataSetItem (because dataset.__iter__ yields items)
             result += item
 
         return result
